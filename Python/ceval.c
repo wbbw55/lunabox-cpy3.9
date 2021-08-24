@@ -31,6 +31,9 @@
 #include "setobject.h"
 
 #include <ctype.h>
+// wbbw55 start
+#include <sys/resource.h>
+// wbbw55 end
 
 #ifdef Py_DEBUG
 /* For debugging the interpreter: */
@@ -1360,7 +1363,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     assert(!_PyErr_Occurred(tstate));
 #endif
 
+// wbbw55 start
+static int cntOpcode = 0;
+static char buffInput[8];
+struct rusage ru;
+// wbbw55 end
+
 main_loop:
+
     for (;;) {
         assert(stack_pointer >= f->f_valuestack); /* else underflow */
         assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
@@ -1460,6 +1470,19 @@ main_loop:
             }
         }
 #endif
+
+        // wbbw55 start
+	cntOpcode ++;
+	getrusage(0, &ru);
+        if (HAS_ARG(opcode)) {
+	    printf("[%d/%ld] %d: %d, %d\n", cntOpcode, ru.ru_maxrss, f->f_lasti, opcode, oparg);
+	} else {
+	    printf("[%d/%ld] %d: %d\n", cntOpcode, ru.ru_maxrss, f->f_lasti, opcode);
+	}
+	if (buffInput[0]!='c') {
+	    fgets(buffInput, sizeof(buffInput), stdin);
+	}
+	// wbbw55 end
 
         switch (opcode) {
 
